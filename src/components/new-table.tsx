@@ -167,7 +167,7 @@ export default function NewTable({
               forcePage={currentPage - 1}
               previousLabel={<ChevronLeftIcon className="w-4" />}
               nextLabel={<ChevronRightIcon className="w-4" />}
-              pageClassName="border  w-6 h-6 text-center mx-2 rounded-full flex items-center justify-center hover:bg-secondary hover:text-white hover:cursor-pointer "
+              pageClassName="border  w-6 h-6 text-center mx-2 rounded-full flex items-center justify-center hover:bg-secondary hover:text-white hover:cursor-pointer transition duration-300 "
               previousClassName="flex mr-1  px-2   h-7  text-gray-500 justify-center items-center font-semibold   hover:cursor-pointer"
               nextClassName="flex ml-1  h-7 px-2  text-gray-500 justify-center items-center font-semibold hover:cursor-pointer"
               breakClassName="text-gray-500"

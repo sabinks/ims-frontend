@@ -2,11 +2,12 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import * as React from "react";
 import { getQueryData } from "../../api";
 import { Button, NewTable, PageTitle, SidePanel } from "../../components";
-import { Inventory } from "../../types";
-import { PencilIcon, TrashIcon } from "@heroicons/react/outline";
+import { Inventory, Inventory422Error } from "../../types";
+import { PencilIcon, SaveIcon, TrashIcon } from "@heroicons/react/outline";
 import { createColumnHelper, SortingState } from "@tanstack/react-table";
 import "react-toastify/dist/ReactToastify.css";
 import {
+  allInventoryList,
   deleteInventory,
   postInventory,
   updateInventory,
@@ -37,7 +38,7 @@ export default function Dashboard() {
   const [inventoryId, setInventoryId] = React.useState(null);
   const [isVisible, toggleIsVisible] = React.useState(false);
   const [tableData, setTableData] = React.useState<any>([]);
-  const [formerrors, setFormErrors] = React.useState<any>({});
+  const [formerrors, setFormErrors] = React.useState<Inventory422Error[]>([]);
 
   const {
     isLoading,
@@ -55,12 +56,45 @@ export default function Dashboard() {
     ],
     getQueryData,
     {
-      onSuccess: (res) => {
+      onSuccess: (res: any) => {
         setTableData(res.data);
       },
     }
   );
-  console.log(result);
+
+  const { refetch: refetchExportData, isFetching: isFetchingExportData } =
+    useQuery(["inventories"], allInventoryList, {
+      refetchOnWindowFocus: false,
+      enabled: false,
+      onSuccess: (data: any) => {
+        const rows = [
+          "Id",
+          "Entry ID",
+          "Title",
+          "Author",
+          "Genre",
+          "Publication Date",
+          "ISBN",
+        ];
+
+        let csvContent = "data:text/csv;charset=utf-8,";
+        let columns = rows.join(",");
+        csvContent += columns + "\r\n";
+
+        data.forEach((rowArray: any) => {
+          let values = Object.values(rowArray);
+          let row = values.join(",");
+          csvContent += row + "\r\n";
+        });
+        var encodedUri = encodeURI(csvContent);
+        var link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "inventory_data.csv");
+        document.body.appendChild(link); // Required for FF
+
+        link.click();
+      },
+    });
 
   const { isLoading: creatingInventory, mutate } = useMutation<any, Error>(
     async () => {
@@ -69,12 +103,28 @@ export default function Dashboard() {
     {
       onSuccess: () => {
         refetch();
+        setFormErrors([]);
+        setState({
+          entryId: "",
+          title: "",
+          author: "",
+          genre: "",
+          publicationDate: "",
+          isbn: "",
+        });
         toggleIsVisible(false);
       },
       onError: (err: any) => {
-        const { status, data } = err.response;
+        const { status } = err.response;
+
         if (status == 422) {
-          setFormErrors(data);
+          const {
+            data: {
+              response: { message },
+            },
+          } = err.response;
+
+          setFormErrors(message);
         } else {
           console.log("Inventory Error: ", err);
         }
@@ -91,21 +141,37 @@ export default function Dashboard() {
     {
       onSuccess: () => {
         refetch();
+        setFormErrors([]);
+        setState({
+          entryId: "",
+          title: "",
+          author: "",
+          genre: "",
+          publicationDate: "",
+          isbn: "",
+        });
         setIsEdit(!isEdit);
       },
       onError: (err: any) => {
-        const { status, data } = err.response;
+        const { status } = err.response;
+
         if (status == 422) {
-          setFormErrors(data);
+          const {
+            data: {
+              response: { message },
+            },
+          } = err.response;
+
+          setFormErrors(message);
         } else {
-          console.log("Course Form Error: ", err);
+          console.log("Inventory Error: ", err);
         }
       },
     }
   );
 
   const { mutate: mutateDeleteInventory } = useMutation<any, Error>(
-    async (inventoryId) => {
+    async (inventoryId: any) => {
       return await deleteInventory(inventoryId);
     },
     {
@@ -120,33 +186,35 @@ export default function Dashboard() {
     setQuery(value);
   };
   const columnHelper = createColumnHelper<Inventory>();
-  const handelEdit = (e: any) => {
+  const handleEdit = (id: any) => {
     setIsEdit(!isEdit);
-    setInventoryId(result.data.data[e].id);
-    let editdata = { ...result?.data.data[e] };
-    setState(editdata);
+    const inventory = tableData.find(
+      (inventory: Inventory) => inventory.id == id
+    );
+    setInventoryId(inventory.id);
+    setState({ ...inventory });
   };
 
   const inventoryColumns = [
     columnHelper.accessor("entryId", {
       header: "Entry ID",
-      cell: (info) => info.getValue(),
+      cell: (info: any) => info.getValue(),
     }),
     columnHelper.accessor("title", {
       header: "Title",
-      cell: (info) => info.getValue(),
+      cell: (info: any) => info.getValue(),
     }),
     columnHelper.accessor("author", {
       header: "Author",
-      cell: (info) => info.getValue(),
+      cell: (info: any) => info.getValue(),
     }),
     columnHelper.accessor("genre", {
       header: "Genre",
-      cell: (info) => info.getValue(),
+      cell: (info: any) => info.getValue(),
     }),
     columnHelper.accessor("isbn", {
       header: "ISBN",
-      cell: (info) => info.getValue(),
+      cell: (info: any) => info.getValue(),
     }),
 
     columnHelper.accessor("publicationDate", {
@@ -169,7 +237,7 @@ export default function Dashboard() {
               buttonType="success"
               label=""
               tooltipMsg="Edit Inventory"
-              onClick={() => handelEdit(el.row.id)}
+              onClick={() => handleEdit(el.row.original.id)}
             />
           }
           {
@@ -193,15 +261,25 @@ export default function Dashboard() {
     <>
       <div className="flex flex-row justify-between items-center">
         <PageTitle title="Inventory" />
-        {
+        <div className="flex space-x-2">
           <Button
             label="Add New Inventory"
             onClick={() => {
               toggleIsVisible(true);
               setState(initialState);
             }}
+            loading={isFetching}
           />
-        }
+          <Button
+            buttonType="secondary"
+            label="Export Data"
+            onClick={() => {
+              refetchExportData();
+            }}
+            icon={<SaveIcon />}
+            loading={isFetchingExportData}
+          />
+        </div>
       </div>
       <div className="flex flex-col sm:px-6 lg:px-8">
         <div className="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
@@ -231,36 +309,31 @@ export default function Dashboard() {
         isVisible={isVisible}
         onClose={() => {
           toggleIsVisible(!isVisible);
-          setFormErrors({});
+          setFormErrors([]);
         }}
         title="Add New Inventory"
         primaryButtonAction={async () => {
-          setFormErrors({});
           await mutate();
-          setState({
-            entryId: "",
-            title: "",
-            author: "",
-            genre: "",
-            publicationDate: "",
-            isbn: "",
-          });
         }}
         primaryButtonLoading={creatingInventory}
       >
         <React.Suspense fallback="loading">
-          <InventoryForm state={state} setState={setState} error={formerrors} />
+          <InventoryForm
+            state={state}
+            setState={setState}
+            errors={formerrors}
+          />
         </React.Suspense>
       </SidePanel>
       <SidePanel
         isVisible={isEdit}
         onClose={() => {
           setIsEdit(!isEdit);
-          setFormErrors({});
+          setFormErrors([]);
         }}
         title="Update Inventory"
         TertiaryButtonAction={async () => {
-          setFormErrors({});
+          setFormErrors([]);
           await updateMutate();
           setState({
             entryId: "",
@@ -273,7 +346,7 @@ export default function Dashboard() {
         }}
         primaryButtonLoading={updatingInventory}
       >
-        <InventoryForm state={state} setState={setState} error={formerrors} />
+        <InventoryForm state={state} setState={setState} errors={formerrors} />
       </SidePanel>
     </>
   );

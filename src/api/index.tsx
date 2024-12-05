@@ -30,29 +30,15 @@ export const getQueryData = async (data: any) => {
 
 //axios client response interceptor for alert
 apiClient.interceptors.response.use(
-  function (response) {
-    // const { status, data } = response;
-    // if (status == 201 || status == 200) {
-    //   toast.success(data.message, { autoClose: 1000 });
-    // }
+  function (response: any) {
+    const { status, data } = response;
+    if (status == 201 || status == 200) {
+      toast.success(data.message, { autoClose: 2000 });
+    }
+
     return response;
   },
-  function (error) {
-    // const { status, data } = error.response;
-    // if (status == 401) {
-    //   localStorage.removeItem("token");
-    //   location.replace("/app/login");
-    //   toast.error("Login required!", { autoClose: 1500 });
-    // }
-    // if (status == 403 || status == 409) {
-    //   toast.error(data.message, { autoClose: 1000 });
-    // }
-    // if (status == 500) {
-    //   toast.error("Server Error!", { autoClose: 1000 });
-    // }
-    // if (status == 422) {
-    //   toast.error("Please fill form !", { autoClose: 1000 });
-    // }
+  function (error: any) {
     return Promise.reject(error);
   }
 );
@@ -78,7 +64,7 @@ apiClient.interceptors.request.use(
       return config;
     }
   },
-  (error) => {
+  (error: any) => {
     console.log(error, "error");
     return Promise.reject(error);
   }

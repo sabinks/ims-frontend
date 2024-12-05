@@ -1,12 +1,7 @@
-import { Dialog, Menu, Transition } from "@headlessui/react";
-import {
-  HomeIcon,
-  MenuAlt2Icon,
-  XIcon,
-  SearchIcon,
-} from "@heroicons/react/outline";
+import { Dialog, Transition } from "@headlessui/react";
+import { HomeIcon, MenuAlt2Icon, XIcon } from "@heroicons/react/outline";
 import { Fragment, useState } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Outlet } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import { PageRoutes } from "../enums/routes.enum";
 import { classNames } from "../utils";
@@ -158,6 +153,14 @@ export default function MainApp() {
 
         <div className="md:pl-10 xl:pl-56 flex flex-col">
           <div className="sticky top-0 z-10 flex-shrink-0 flex h-12 bg-white shadow">
+            <button
+              type="button"
+              className="px-4 border-r border-gray-200 text-gray-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-cerulean-500 md:hidden"
+              onClick={() => setSidebarOpen(true)}
+            >
+              <span className="sr-only">Open sidebar</span>
+              <MenuAlt2Icon className="h-6 w-6" aria-hidden="true" />
+            </button>
             <div className="flex-1 px-1 flex justify-between items-center border">
               <div className="flex-1 flex"></div>
               <div className="ml-4 flex items-center md:ml-6"></div>

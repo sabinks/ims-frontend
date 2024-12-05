@@ -17,3 +17,10 @@ export const updateInventory = async (id: any, body: Inventory) => {
 export const deleteInventory = async (inventoryId: any) => {
   return await apiClient.delete(`/inventory/${inventoryId}`);
 };
+
+export const allInventoryList = async () => {
+  const response = await apiClient.get("/inventories", {
+    headers: { "Content-Type": "application/json" },
+  });
+  return response.data;
+};
